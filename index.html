@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>混融の団結者シミュレーター(シャドバWB) - actionpterygii</title>
+</head>
+<body>
+    <header>混融の団結者シミュレーター(シャドバWB)</header>
+    <main>
+        <form id="view">
+        </form>
+        <div id="controller">
+            <form id="modeW">
+                <div class="mode">
+                    <input type="checkbox" name="first" id="first">
+                    <label for="first">（1）『混融の団結者』1枚を自分の場に出す。それとこれは【突進】を持つ。</label>
+                </div>
+                <div class="mode">
+                    <input type="checkbox" name="second" id="second">
+                    <label for="second">（2）『混融の団結者』1枚を自分の場に出す。それとこれは【守護】を持つ。</label>
+                </div>
+                <div class="mode">
+                    <input type="checkbox" name="third" id="third">
+                    <label for="third">（3）自分の場の『混融の団結者』すべては+2/+2する。</label>
+                </div>
+            </form>
+            
+            <div id="buttonW">
+                <button id="summon">召喚</button>
+                <button id="evolve">進化</button>
+                <button id="superEvolve">超進化</button>
+                <button id="break">破壊</button>
+                <button id="next">次ターン</button>
+                <button id="reset">リセット</button>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <a class="actionpterygii" href="https://www.actionpterygii.com/">actionpterygii</a>
+    </footer>
+    <style>
+        header {
+            font-size: 20px;
+        }
+        #view {
+            margin: 10px;
+            display: flex;
+            gap:0 10px;
+        }
+        .follower {
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #d4c12f;
+        }
+        .follower label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .select {
+        }
+        .state {
+            display: flex;
+            flex-direction: column;
+            height: 70px;
+            justify-content: flex-end;
+        }
+        .state div {
+            text-align: center;
+        }
+        .stats {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+        }
+        .atk {
+            background-color: #0000ff;
+        }
+        .dfe {
+            background-color: #ff0000;
+        }
+        .stats div {
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+        }
+        .actionpterygii {
+            display: block;
+            text-align: center;
+            color: #33cccc;
+        }
+    </style>
+    <script>
+        let follower = 0;
+        const maxFollower = 5;
+
+        const stateEvolve = '進化';
+        const stateSuperEvolve = '超進化';
+        const stateRush = '突進';
+        const stateSprint = '疾走';
+        const stateGuard = '守護';
+
+        const konyuuNoDanketsusyaHTML = (number) => {
+            const id = 'follower' + number;
+            return `
+                <div class="follower">
+                    <input class="select" type="radio" name="follower" id="${id}" value="${number}">
+                    <label for="${id}">
+                        <div class="state">
+                            <div class="state1"></div>
+                            <div class="state2"></div>
+                            <div class="state3"></div>
+                        </div>
+                        <div class="stats">
+                            <div class="atk">4</div>
+                            <div class="dfe">4</div>
+                        </div>
+                    </label>
+                </div>
+            `;
+        };
+
+        const pickMode = () => {
+            const firstCB = document.getElementById('first');
+            const secondCB = document.getElementById('second');
+            const thirdCB = document.getElementById('third');
+
+            const first = firstCB.checked;
+            const second = secondCB.checked;
+            const third = thirdCB.checked;
+
+            const mode = {
+                first: first,
+                second: second,
+                third: third
+            };
+
+            firstCB.checked = false;
+            secondCB.checked = false;
+            thirdCB.checked = false;
+
+            return mode;
+        };
+
+        const apply = (mode, current) => {
+            if (mode.first) {
+                applyFirst(current);
+            }
+            if (mode.second) {
+                applySecond(current);
+            }
+            if (mode.third) {
+                applyThird(current);
+            }
+
+            // 一気に2以上追加召喚する場合は現状対応できない
+            if (follower >= maxFollower) {
+                getFollower(maxFollower + 1).parentNode.remove();
+            }
+        };
+        
+        const applyFirst = (current) => {
+            summon();
+            updateState(stateRush, current);
+            updateState(stateRush, follower);
+        };
+
+        const applySecond = (current) => {
+            summon();
+            updateState(stateGuard, current);
+            updateState(stateGuard, follower);
+        };
+
+        const applyThird = () => {
+            for (let index = 1; index <= follower; index++) {
+                buffFollower(2, index);
+            }
+        };
+
+        const updateState = (type, number) => {
+            const follower = getFollower(number);
+            const state = follower.getElementsByClassName('state')[0];
+
+            switch (type) {
+                case stateEvolve:
+                case stateSuperEvolve:
+                    state.getElementsByClassName('state1')[0].innerHTML = type;
+                    if (!state.getElementsByClassName('state2')[0].innerHTML) {
+                        state.getElementsByClassName('state2')[0].innerHTML = stateRush;
+                    }
+                    break;
+                case stateRush:
+                case stateSprint:
+                    state.getElementsByClassName('state2')[0].innerHTML = type;
+                    break;
+                case stateGuard:
+                    state.getElementsByClassName('state3')[0].innerHTML = type;
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        const buffFollower = (plus, number) => {
+            const follower = getFollower(number);
+            const atk = follower.getElementsByClassName('atk')[0];
+            const dfe = follower.getElementsByClassName('dfe')[0];
+            atk.innerHTML = Number(atk.innerHTML) + plus;
+            dfe.innerHTML = Number(dfe.innerHTML) + plus;
+        };
+
+        const getFollower = (number) => {
+            return document.getElementById('follower' + number).nextElementSibling;
+        };
+
+        const summon = () => {
+            ++follower;
+            document.getElementById('view').insertAdjacentHTML('beforeend', konyuuNoDanketsusyaHTML(follower));
+        };
+
+        document.getElementById('summon').addEventListener('click', () => {
+            const first = document.getElementById('first').checked;
+            const second = document.getElementById('second').checked;
+            const third = document.getElementById('third').checked;
+            if (!(first || second || third)) {
+                alert('【モード】を選ばないと召喚できません');
+                return;
+            }
+            if (follower >= maxFollower) {
+                alert('これ以上召喚できません');
+                return;
+            }
+            summon();
+            apply(pickMode(), follower);
+        });
+
+        document.getElementById('evolve').addEventListener('click', () => {
+            const selected = document.getElementById('view').follower.value;
+            if (!selected) {
+                alert('進化対象を選択してください');
+                return;
+            }
+            if (getFollower(selected).getElementsByClassName('state1')[0].innerHTML) {
+                alert('進化済です');
+                return;
+            }
+            updateState(stateEvolve, selected);
+            buffFollower(2, selected);
+        });
+
+        document.getElementById('superEvolve').addEventListener('click', () => {
+            const selected = document.getElementById('view').follower.value;
+            if (!selected) {
+                alert('超進化対象を選択してください');
+                return;
+            }
+            if (getFollower(selected).getElementsByClassName('state1')[0].innerHTML) {
+                alert('進化済です');
+                return;
+            }
+            const first = document.getElementById('first').checked;
+            const second = document.getElementById('second').checked;
+            const third = document.getElementById('third').checked;
+            if (!(first || second || third)) {
+                alert('【モード】を選ばないと超進化できません');
+                return;
+            }
+            updateState(stateSuperEvolve, selected);
+            buffFollower(3, selected);
+            apply(pickMode(), follower);
+        });
+
+        document.getElementById('break').addEventListener('click', () => {
+            const selected = document.getElementById('view').follower.value;
+            if (!selected) {
+                alert('破壊対象を選択してください');
+                return;
+            }
+            --follower;
+            getFollower(selected).parentNode.remove();
+        });
+
+        document.getElementById('next').addEventListener('click', () => {
+            const followers = document.getElementsByClassName('state2');
+            for (let index = 0; index < followers.length; index++) {
+                const follower = followers[index];
+                follower.innerHTML = stateSprint;
+            }
+        });
+
+        document.getElementById('reset').addEventListener('click', () => {
+            follower = 0;
+            document.getElementById('view').innerHTML = '';
+        });
+
+    </script>
+</body>
+</html>
